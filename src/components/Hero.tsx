@@ -2,7 +2,6 @@ import { MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { whatsappLink } from "../lib/contact";
 import logo from "../assets/images/logo.webp";
-import heroVideoAlpha from "../assets/videos/hamburguesa-armado-alpha.webm";
 import heroVideo from "../assets/videos/hamburguesa-armado.mp4";
 import heroPoster from "../assets/images/hamburguesa-armado-poster.webp";
 import smokeVideo from "../assets/videos/humo-ambiente.mp4";
@@ -109,6 +108,7 @@ export default function Hero() {
           <div className="relative animate-float">
             <video
               ref={videoRef}
+              src={heroVideo}
               poster={heroPoster}
               autoPlay={!reducedMotion}
               muted
@@ -119,10 +119,7 @@ export default function Hero() {
                 filter:
                   "drop-shadow(0 30px 26px rgba(0,0,0,0.55)) drop-shadow(0 10px 10px rgba(0,0,0,0.4))",
               }}
-            >
-              <source src={heroVideoAlpha} type="video/webm" />
-              <source src={heroVideo} type="video/mp4" />
-            </video>
+            />
             <span className="absolute -bottom-2 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.14em] text-cheddar-soft">
               <span className="h-1.5 w-1.5 animate-flicker rounded-full bg-ember" />
               Directo de la brasa

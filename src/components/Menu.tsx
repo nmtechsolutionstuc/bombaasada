@@ -1,6 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { whatsappLink } from "../lib/contact";
 import Reveal from "./Reveal";
+import LazyVideo from "./LazyVideo";
 import comboImg from "../assets/images/hamburguesa-combo-papas.webp";
 import dobleImg from "../assets/images/hamburguesa-doble-cheddar-bacon.webp";
 import trioImg from "../assets/images/hamburguesas-trio-cenital.webp";
@@ -89,14 +90,7 @@ export default function Menu() {
         <Reveal delay={PRODUCTS.length * 110}>
           <div className="mt-6 grid gap-6 overflow-hidden rounded-[28px] border border-char-line bg-char-soft sm:grid-cols-[1fr_1.2fr]">
             <div className="relative aspect-[4/3] overflow-hidden sm:aspect-auto">
-              <video
-                src={parrillaVideo}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="h-full w-full object-cover"
-              />
+              <LazyVideo src={parrillaVideo} className="h-full w-full object-cover" />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-char-soft/40 via-transparent to-transparent sm:bg-gradient-to-r" />
             </div>
             <div className="flex flex-col justify-center gap-3 p-8 sm:p-10">

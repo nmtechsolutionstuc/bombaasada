@@ -1,6 +1,7 @@
 import { Flame, Home, Wheat } from "lucide-react";
 import panesVideo from "../assets/videos/panes-horneando.mp4";
 import puestoImg from "../assets/images/puesto-feria-nocturna.webp";
+import LazyVideo from "./LazyVideo";
 
 const POINTS = [
   {
@@ -25,14 +26,7 @@ export default function Craft() {
     <section id="historia" className="bg-char-soft px-6 py-24 sm:px-10 lg:px-16">
       <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2">
         <div className="relative overflow-hidden rounded-[28px] border border-char-line">
-          <video
-            src={panesVideo}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="aspect-[4/5] w-full object-cover"
-          />
+          <LazyVideo src={panesVideo} className="aspect-[4/5] w-full object-cover" />
         </div>
 
         <div>
@@ -76,7 +70,7 @@ export default function Craft() {
             src={puestoImg}
             alt="El puesto de Bomba Asada de noche, en una feria de J.B. Alberdi"
             loading="lazy"
-            className="h-72 w-full object-cover sm:h-96"
+            className="aspect-video w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-char via-char/30 to-transparent" />
           <p className="absolute bottom-6 left-6 right-6 font-mono text-xs uppercase tracking-[0.14em] text-paper-dim sm:bottom-8 sm:left-10">

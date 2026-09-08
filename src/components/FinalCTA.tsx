@@ -1,17 +1,14 @@
 import { AtSign, MessageCircle } from "lucide-react";
 import { INSTAGRAM_URL, whatsappLink } from "../lib/contact";
 import detalleVideo from "../assets/videos/hamburguesa-detalle.mp4";
+import LazyVideo from "./LazyVideo";
 
 export default function FinalCTA() {
   return (
     <section className="relative overflow-hidden bg-char-soft px-6 py-24 sm:px-10 lg:px-16">
-      <video
+      <LazyVideo
         src={detalleVideo}
-        autoPlay
-        muted
-        loop
-        playsInline
-        aria-hidden
+        ariaHidden
         className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.14]"
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-char-soft via-char-soft/95 to-char-soft" />
