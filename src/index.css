@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Anton", "Arial Narrow", sans-serif;
+  --font-body: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-char: #0c0a08;
+  --color-char-soft: #171310;
+  --color-char-line: #2c251d;
+  --color-paper: #f6efe2;
+  --color-paper-dim: #b9ab97;
+  --color-cheddar: #ffab1f;
+  --color-cheddar-soft: #ffcf7a;
+  --color-ember: #ff5a36;
+  --color-ember-soft: #ff8a63;
+
+  --animate-marquee: marquee 26s linear infinite;
+  --animate-riseIn: riseIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-flicker: flicker 3.2s ease-in-out infinite;
+  --animate-float: float 3.8s ease-in-out infinite;
+}
+
+@layer base {
+  html {
+    background: var(--color-char);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-char);
+    color: var(--color-paper);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-cheddar);
+    color: var(--color-char);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .text-stroke-paper {
+    -webkit-text-stroke: 1px var(--color-paper);
+  }
+
+  .ember-glow {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-ember) 40%, transparent),
+      0 8px 30px -8px color-mix(in srgb, var(--color-ember) 55%, transparent);
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes riseIn {
+    from {
+      opacity: 0;
+      transform: translateY(1.25rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0) translateX(0) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-18px) translateX(6px) rotate(1.5deg);
+    }
+    50% {
+      transform: translateY(-32px) translateX(0) rotate(0deg);
+    }
+    75% {
+      transform: translateY(-18px) translateX(-6px) rotate(-1.5deg);
+    }
+  }
+
+  @keyframes flicker {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    46% {
+      opacity: 0.85;
+    }
+    48% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.75;
+    }
+    52% {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0s !important;
+      transition-delay: 0s !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
