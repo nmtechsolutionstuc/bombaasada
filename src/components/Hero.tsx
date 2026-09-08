@@ -2,7 +2,7 @@ import { MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { whatsappLink } from "../lib/contact";
 import logo from "../assets/images/logo.webp";
-import heroVideo from "../assets/videos/hamburguesa-armado.mp4";
+import heroAlpha from "../assets/images/hamburguesa-armado-alpha.webp";
 import heroPoster from "../assets/images/hamburguesa-armado-poster.webp";
 import smokeVideo from "../assets/videos/humo-ambiente.mp4";
 import HeroGlow from "./HeroGlow";
@@ -22,15 +22,13 @@ function useReducedMotion() {
 
 export default function Hero() {
   const reducedMotion = useReducedMotion();
-  const videoRef = useRef<HTMLVideoElement>(null);
   const smokeRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    for (const video of [videoRef.current, smokeRef.current]) {
-      if (!video) continue;
-      if (reducedMotion) video.pause();
-      else video.play().catch(() => {});
-    }
+    const video = smokeRef.current;
+    if (!video) return;
+    if (reducedMotion) video.pause();
+    else video.play().catch(() => {});
   }, [reducedMotion]);
 
   return (
@@ -106,20 +104,18 @@ export default function Hero() {
 
         <div className="relative order-1 animate-riseIn justify-self-center lg:order-2 [animation-delay:120ms]">
           <div className="relative animate-float">
-            <video
-              ref={videoRef}
-              src={heroVideo}
-              poster={heroPoster}
-              autoPlay={!reducedMotion}
-              muted
-              loop
-              playsInline
-              className="aspect-[35/27] w-[300px] object-contain sm:w-[380px] lg:w-[420px] xl:w-[480px]"
-              style={{
-                filter:
-                  "drop-shadow(0 30px 26px rgba(0,0,0,0.55)) drop-shadow(0 10px 10px rgba(0,0,0,0.4))",
-              }}
-            />
+            <picture>
+              <source media="(prefers-reduced-motion: reduce)" srcSet={heroPoster} />
+              <img
+                src={heroAlpha}
+                alt="Hamburguesa Bomba Asada armándose capa por capa"
+                className="aspect-[640/523] w-[300px] object-contain sm:w-[380px] lg:w-[420px] xl:w-[480px]"
+                style={{
+                  filter:
+                    "drop-shadow(0 30px 26px rgba(0,0,0,0.55)) drop-shadow(0 10px 10px rgba(0,0,0,0.4))",
+                }}
+              />
+            </picture>
             <span className="absolute -bottom-2 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.14em] text-cheddar-soft">
               <span className="h-1.5 w-1.5 animate-flicker rounded-full bg-ember" />
               Directo de la brasa
