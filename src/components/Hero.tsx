@@ -209,7 +209,7 @@ export default function Hero() {
           playsInline
           preload="auto"
           aria-hidden
-          className="absolute inset-0 h-full w-full object-contain object-center lg:object-cover"
+          className="absolute inset-0 h-full w-full object-cover object-center"
         />
         <div
           aria-hidden
