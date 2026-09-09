@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { whatsappLink } from "../lib/contact";
 import logo from "../assets/images/logo.webp";
 import heroVideo from "../assets/videos/bomba-scroll-optimized.mp4";
-import heroBackdrop from "../assets/images/hero-scroll-backdrop.webp";
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(
@@ -202,20 +201,6 @@ export default function Hero() {
       className={`relative ${reducedMotion ? "h-screen" : "h-[300vh] lg:h-[450vh]"}`}
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-char">
-        {/* Mobile-only backdrop: the source video is a wide 16:9 shot, so a
-            straight object-cover crop on a tall phone screen only ever
-            reveals ~25% of its width — nowhere near enough to keep both the
-            burger and the fries/soda in frame. This static, heavily
-            blurred still (a single ~200-byte image) fills the screen
-            edge-to-edge with color-matched warmth instead of flat bars,
-            while the sharp video on top shows the entire uncropped
-            composition via object-contain. */}
-        <img
-          src={heroBackdrop}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full scale-110 object-cover object-center lg:hidden"
-        />
         <video
           ref={videoRef}
           src={heroVideo}
@@ -223,7 +208,7 @@ export default function Hero() {
           playsInline
           preload="auto"
           aria-hidden
-          className="absolute inset-0 h-full w-full object-contain object-center lg:object-cover"
+          className="absolute inset-0 h-full w-full object-cover object-center"
         />
         <div
           aria-hidden
