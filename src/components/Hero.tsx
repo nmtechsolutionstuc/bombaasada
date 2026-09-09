@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { whatsappLink } from "../lib/contact";
 import logo from "../assets/images/logo.webp";
 import heroVideo from "../assets/videos/bomba-scroll-optimized.mp4";
+import heroBackdrop from "../assets/images/hero-scroll-backdrop.webp";
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(
@@ -26,32 +27,12 @@ function band(p: number, a: number, b: number, c: number, d: number) {
   return Math.max(0, ramp(p, a, b) - ramp(p, c, d));
 }
 
-// Muted play() immediately followed by pause() — some browsers keep a
-// paused, never-played <video> stuck visually even though .currentTime and
-// the decoded buffer are updating correctly underneath. This "primes" the
-// render pipeline without ever visibly playing anything; every subsequent
-// frame change still happens exclusively via currentTime.
-function primeVideo(video: HTMLVideoElement) {
-  const run = () => {
-    video
-      .play()
-      .then(() => video.pause())
-      .catch(() => {
-        // autoplay rejected — currentTime scrubbing still engages the
-        // pipeline in browsers that actually need this
-      });
-  };
-  if (video.readyState >= 2) run();
-  else video.addEventListener("loadeddata", run, { once: true });
-}
-
 const PHASE_PADDING = "px-[clamp(20px,6vw,80px)]";
 
 export default function Hero() {
   const reducedMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const videoBgRef = useRef<HTMLVideoElement>(null);
   const phase1Ref = useRef<HTMLDivElement>(null);
   const phase2Ref = useRef<HTMLDivElement>(null);
   const phase3Ref = useRef<HTMLDivElement>(null);
@@ -61,20 +42,12 @@ export default function Hero() {
   useEffect(() => {
     const section = sectionRef.current;
     const video = videoRef.current;
-    const videoBg = videoBgRef.current;
     if (!section || !video) return;
 
     const seekTo = (time: number) => {
       if (video.readyState >= 1 && Math.abs(video.currentTime - time) > 0.01) {
         try {
           video.currentTime = time;
-        } catch {
-          // ignore transient seek errors
-        }
-      }
-      if (videoBg && videoBg.readyState >= 1 && Math.abs(videoBg.currentTime - time) > 0.01) {
-        try {
-          videoBg.currentTime = time;
         } catch {
           // ignore transient seek errors
         }
@@ -121,12 +94,6 @@ export default function Hero() {
 
       const duration = video.duration && isFinite(video.duration) ? video.duration : 0;
       target = progress * duration;
-
-      // rAF throttled (backgrounded tab, etc.) — snap directly on the scroll/resize event itself
-      if (duration > 0 && (lastTick === 0 || performance.now() - lastTick > 200)) {
-        current = target;
-        seekTo(target);
-      }
 
       const p1 = phase1Ref.current;
       if (p1) {
@@ -175,25 +142,55 @@ export default function Hero() {
       rafId = requestAnimationFrame(tick);
     };
 
-    window.addEventListener("scroll", updateTargets, { passive: true });
-    window.addEventListener("resize", updateTargets, { passive: true });
+    // The rAF loop above already recomputes progress every frame, so
+    // scroll/resize events would normally be pure duplicate work (a
+    // trackpad can fire far more than 60 'scroll' events/sec, each forcing
+    // a layout read). They only matter here as a fallback for when rAF
+    // itself has stalled (backgrounded tab) — snap straight to target in
+    // that case instead of waiting for a tick that may not come soon.
+    const onScrollOrResize = () => {
+      if (lastTick !== 0 && performance.now() - lastTick <= 200) return;
+      updateTargets();
+      current = target;
+      seekTo(target);
+    };
+
+    window.addEventListener("scroll", onScrollOrResize, { passive: true });
+    window.addEventListener("resize", onScrollOrResize, { passive: true });
     updateTargets();
     rafId = requestAnimationFrame(tick);
 
-    for (const v of [video, videoBg]) {
-      if (v && v.readyState === 0) {
-        try {
-          v.load();
-        } catch {
-          // ignore
-        }
+    if (video.readyState === 0) {
+      try {
+        video.load();
+      } catch {
+        // ignore
       }
-      if (v) primeVideo(v);
     }
 
+    // Some browsers keep a paused, never-played <video> stuck on its poster
+    // frame internally even though .currentTime and the decoded buffer are
+    // updating correctly — a video that never played doesn't get its
+    // compositor layer repainted from bare currentTime writes alone. A
+    // one-shot muted play immediately followed by a pause "primes" that
+    // pipeline without ever visibly playing anything; scrubbing after this
+    // still happens exclusively via currentTime.
+    const primeVideo = () => {
+      video
+        .play()
+        .then(() => video.pause())
+        .catch(() => {
+          // autoplay rejected (e.g. no user gesture yet) — currentTime
+          // scrubbing still engages the pipeline in browsers that need this
+        });
+    };
+    if (video.readyState >= 2) primeVideo();
+    else video.addEventListener("loadeddata", primeVideo, { once: true });
+
     return () => {
-      window.removeEventListener("scroll", updateTargets);
-      window.removeEventListener("resize", updateTargets);
+      window.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("resize", onScrollOrResize);
+      video.removeEventListener("loadeddata", primeVideo);
       cancelAnimationFrame(rafId);
     };
   }, [reducedMotion]);
@@ -205,21 +202,19 @@ export default function Hero() {
       className={`relative ${reducedMotion ? "h-screen" : "h-[300vh] lg:h-[450vh]"}`}
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-char">
-        {/* Mobile-only blurred backdrop: the source video is a wide 16:9
-            shot, so a straight object-cover crop on a tall phone screen
-            only ever reveals ~25% of its width — nowhere near enough to
-            keep both the burger and the fries/soda in frame. This live,
-            heavily blurred copy fills the screen edge-to-edge with
-            color-matched motion instead of flat bars, while the sharp
-            copy on top shows the entire uncropped composition. */}
-        <video
-          ref={videoBgRef}
-          src={heroVideo}
-          muted
-          playsInline
-          preload="auto"
+        {/* Mobile-only backdrop: the source video is a wide 16:9 shot, so a
+            straight object-cover crop on a tall phone screen only ever
+            reveals ~25% of its width — nowhere near enough to keep both the
+            burger and the fries/soda in frame. This static, heavily
+            blurred still (a single ~200-byte image) fills the screen
+            edge-to-edge with color-matched warmth instead of flat bars,
+            while the sharp video on top shows the entire uncropped
+            composition via object-contain. */}
+        <img
+          src={heroBackdrop}
+          alt=""
           aria-hidden
-          className="absolute inset-0 h-full w-full scale-110 object-cover object-center blur-3xl brightness-[0.45] saturate-[1.15] lg:hidden"
+          className="absolute inset-0 h-full w-full scale-110 object-cover object-center lg:hidden"
         />
         <video
           ref={videoRef}
