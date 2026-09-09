@@ -1,10 +1,7 @@
 import { MapPin } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { whatsappLink } from "../lib/contact";
 import logo from "../assets/images/logo.webp";
-import heroAlpha from "../assets/images/hamburguesa-armado-alpha.webp";
-import heroPoster from "../assets/images/hamburguesa-armado-poster.webp";
-import smokeVideo from "../assets/videos/humo-ambiente.mp4";
 import HeroGlow from "./HeroGlow";
 
 function useReducedMotion() {
@@ -22,14 +19,6 @@ function useReducedMotion() {
 
 export default function Hero() {
   const reducedMotion = useReducedMotion();
-  const smokeRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const video = smokeRef.current;
-    if (!video) return;
-    if (reducedMotion) video.pause();
-    else video.play().catch(() => {});
-  }, [reducedMotion]);
 
   return (
     <section
@@ -38,19 +27,8 @@ export default function Hero() {
     >
       <HeroGlow reducedMotion={reducedMotion} />
 
-      <video
-        ref={smokeRef}
-        src={smokeVideo}
-        autoPlay={!reducedMotion}
-        muted
-        loop
-        playsInline
-        aria-hidden
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-bottom opacity-40 mix-blend-screen"
-      />
-
-      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
-        <div className="order-2 animate-riseIn lg:order-1">
+      <div className="relative mx-auto w-full max-w-3xl">
+        <div className="animate-riseIn">
           <div className="mb-6 flex items-center gap-3">
             <img
               src={logo}
@@ -100,27 +78,6 @@ export default function Hero() {
             <MapPin className="h-4 w-4 text-cheddar" strokeWidth={2.25} />
             Juan Bautista Alberdi, Tucumán
           </a>
-        </div>
-
-        <div className="relative order-1 animate-riseIn justify-self-center lg:order-2 [animation-delay:120ms]">
-          <div className="relative animate-float">
-            <picture>
-              <source media="(prefers-reduced-motion: reduce)" srcSet={heroPoster} />
-              <img
-                src={heroAlpha}
-                alt="Hamburguesa Bomba Asada armándose capa por capa"
-                className="aspect-[640/523] w-[300px] object-contain sm:w-[380px] lg:w-[420px] xl:w-[480px]"
-                style={{
-                  filter:
-                    "drop-shadow(0 30px 26px rgba(0,0,0,0.55)) drop-shadow(0 10px 10px rgba(0,0,0,0.4))",
-                }}
-              />
-            </picture>
-            <span className="absolute -bottom-2 left-1/2 inline-flex -translate-x-1/2 items-center gap-2 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.14em] text-cheddar-soft">
-              <span className="h-1.5 w-1.5 animate-flicker rounded-full bg-ember" />
-              Directo de la brasa
-            </span>
-          </div>
         </div>
       </div>
     </section>
