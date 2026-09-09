@@ -26,12 +26,32 @@ function band(p: number, a: number, b: number, c: number, d: number) {
   return Math.max(0, ramp(p, a, b) - ramp(p, c, d));
 }
 
+// Muted play() immediately followed by pause() — some browsers keep a
+// paused, never-played <video> stuck visually even though .currentTime and
+// the decoded buffer are updating correctly underneath. This "primes" the
+// render pipeline without ever visibly playing anything; every subsequent
+// frame change still happens exclusively via currentTime.
+function primeVideo(video: HTMLVideoElement) {
+  const run = () => {
+    video
+      .play()
+      .then(() => video.pause())
+      .catch(() => {
+        // autoplay rejected — currentTime scrubbing still engages the
+        // pipeline in browsers that actually need this
+      });
+  };
+  if (video.readyState >= 2) run();
+  else video.addEventListener("loadeddata", run, { once: true });
+}
+
 const PHASE_PADDING = "px-[clamp(20px,6vw,80px)]";
 
 export default function Hero() {
   const reducedMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoBgRef = useRef<HTMLVideoElement>(null);
   const phase1Ref = useRef<HTMLDivElement>(null);
   const phase2Ref = useRef<HTMLDivElement>(null);
   const phase3Ref = useRef<HTMLDivElement>(null);
@@ -41,7 +61,25 @@ export default function Hero() {
   useEffect(() => {
     const section = sectionRef.current;
     const video = videoRef.current;
+    const videoBg = videoBgRef.current;
     if (!section || !video) return;
+
+    const seekTo = (time: number) => {
+      if (video.readyState >= 1 && Math.abs(video.currentTime - time) > 0.01) {
+        try {
+          video.currentTime = time;
+        } catch {
+          // ignore transient seek errors
+        }
+      }
+      if (videoBg && videoBg.readyState >= 1 && Math.abs(videoBg.currentTime - time) > 0.01) {
+        try {
+          videoBg.currentTime = time;
+        } catch {
+          // ignore transient seek errors
+        }
+      }
+    };
 
     if (reducedMotion) {
       if (phase1Ref.current) {
@@ -61,15 +99,9 @@ export default function Hero() {
           .play()
           .then(() => {
             video.pause();
-            video.currentTime = video.duration || 0;
+            seekTo(video.duration || 0);
           })
-          .catch(() => {
-            try {
-              video.currentTime = video.duration || 0;
-            } catch {
-              // seeking can throw before metadata is ready; safe to ignore
-            }
-          });
+          .catch(() => seekTo(video.duration || 0));
       };
       if (video.readyState >= 1) setEnd();
       else video.addEventListener("loadedmetadata", setEnd, { once: true });
@@ -93,13 +125,7 @@ export default function Hero() {
       // rAF throttled (backgrounded tab, etc.) — snap directly on the scroll/resize event itself
       if (duration > 0 && (lastTick === 0 || performance.now() - lastTick > 200)) {
         current = target;
-        if (video.readyState >= 1 && Math.abs(video.currentTime - target) > 0.01) {
-          try {
-            video.currentTime = target;
-          } catch {
-            // ignore transient seek errors
-          }
-        }
+        seekTo(target);
       }
 
       const p1 = phase1Ref.current;
@@ -145,13 +171,7 @@ export default function Hero() {
       updateTargets();
       lastTick = now;
       current += (target - current) * 0.24;
-      if (video.readyState >= 1 && isFinite(current) && Math.abs(video.currentTime - current) > 0.01) {
-        try {
-          video.currentTime = current;
-        } catch {
-          // ignore transient seek errors
-        }
-      }
+      if (isFinite(current)) seekTo(current);
       rafId = requestAnimationFrame(tick);
     };
 
@@ -160,37 +180,20 @@ export default function Hero() {
     updateTargets();
     rafId = requestAnimationFrame(tick);
 
-    if (video.readyState === 0) {
-      try {
-        video.load();
-      } catch {
-        // ignore
+    for (const v of [video, videoBg]) {
+      if (v && v.readyState === 0) {
+        try {
+          v.load();
+        } catch {
+          // ignore
+        }
       }
+      if (v) primeVideo(v);
     }
-
-    // Some browsers keep a paused, never-played <video> stuck on its poster
-    // frame internally even though .currentTime and the decoded buffer are
-    // updating correctly — a video that never played doesn't get its
-    // compositor layer repainted from bare currentTime writes alone. A
-    // one-shot muted play immediately followed by a pause "primes" that
-    // pipeline without ever visibly playing anything; scrubbing after this
-    // still happens exclusively via currentTime.
-    const primeVideo = () => {
-      video
-        .play()
-        .then(() => video.pause())
-        .catch(() => {
-          // autoplay rejected (e.g. no user gesture yet) — currentTime
-          // scrubbing still engages the pipeline in browsers that need this
-        });
-    };
-    if (video.readyState >= 2) primeVideo();
-    else video.addEventListener("loadeddata", primeVideo, { once: true });
 
     return () => {
       window.removeEventListener("scroll", updateTargets);
       window.removeEventListener("resize", updateTargets);
-      video.removeEventListener("loadeddata", primeVideo);
       cancelAnimationFrame(rafId);
     };
   }, [reducedMotion]);
@@ -202,6 +205,22 @@ export default function Hero() {
       className={`relative ${reducedMotion ? "h-screen" : "h-[300vh] lg:h-[450vh]"}`}
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-char">
+        {/* Mobile-only blurred backdrop: the source video is a wide 16:9
+            shot, so a straight object-cover crop on a tall phone screen
+            only ever reveals ~25% of its width — nowhere near enough to
+            keep both the burger and the fries/soda in frame. This live,
+            heavily blurred copy fills the screen edge-to-edge with
+            color-matched motion instead of flat bars, while the sharp
+            copy on top shows the entire uncropped composition. */}
+        <video
+          ref={videoBgRef}
+          src={heroVideo}
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden
+          className="absolute inset-0 h-full w-full scale-110 object-cover object-center blur-3xl brightness-[0.45] saturate-[1.15] lg:hidden"
+        />
         <video
           ref={videoRef}
           src={heroVideo}
@@ -209,7 +228,7 @@ export default function Hero() {
           playsInline
           preload="auto"
           aria-hidden
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className="absolute inset-0 h-full w-full object-contain object-center lg:object-cover"
         />
         <div
           aria-hidden
