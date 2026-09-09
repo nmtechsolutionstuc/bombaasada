@@ -57,11 +57,19 @@ export default function Hero() {
         phase5Ref.current.style.pointerEvents = "auto";
       }
       const setEnd = () => {
-        try {
-          video.currentTime = video.duration || 0;
-        } catch {
-          // seeking can throw before metadata is ready; safe to ignore
-        }
+        video
+          .play()
+          .then(() => {
+            video.pause();
+            video.currentTime = video.duration || 0;
+          })
+          .catch(() => {
+            try {
+              video.currentTime = video.duration || 0;
+            } catch {
+              // seeking can throw before metadata is ready; safe to ignore
+            }
+          });
       };
       if (video.readyState >= 1) setEnd();
       else video.addEventListener("loadedmetadata", setEnd, { once: true });
@@ -160,9 +168,29 @@ export default function Hero() {
       }
     }
 
+    // Some browsers keep a paused, never-played <video> stuck on its poster
+    // frame internally even though .currentTime and the decoded buffer are
+    // updating correctly — a video that never played doesn't get its
+    // compositor layer repainted from bare currentTime writes alone. A
+    // one-shot muted play immediately followed by a pause "primes" that
+    // pipeline without ever visibly playing anything; scrubbing after this
+    // still happens exclusively via currentTime.
+    const primeVideo = () => {
+      video
+        .play()
+        .then(() => video.pause())
+        .catch(() => {
+          // autoplay rejected (e.g. no user gesture yet) — currentTime
+          // scrubbing still engages the pipeline in browsers that need this
+        });
+    };
+    if (video.readyState >= 2) primeVideo();
+    else video.addEventListener("loadeddata", primeVideo, { once: true });
+
     return () => {
       window.removeEventListener("scroll", updateTargets);
       window.removeEventListener("resize", updateTargets);
+      video.removeEventListener("loadeddata", primeVideo);
       cancelAnimationFrame(rafId);
     };
   }, [reducedMotion]);
@@ -181,7 +209,7 @@ export default function Hero() {
           playsInline
           preload="auto"
           aria-hidden
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className="absolute inset-0 h-full w-full object-contain object-center lg:object-cover"
         />
         <div
           aria-hidden
